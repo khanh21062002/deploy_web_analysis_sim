@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phân Tích Số Đẹp</title>
+    <style>
+        .sim-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+
+        .sim {
+             /* Màu nền vàng nhạt */
+            border-radius: 5px; /* Góc bo tròn */
+            margin-right: 10px; /* Khoảng cách giữa các sim */
+            margin-bottom: 10px; /* Khoảng cách dưới mỗi sim */
+            padding: 5px; /* Đệm bên trong cho mỗi sim */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Thêm bóng cho đẹp */
+            flex: 0 1 auto; 
+            width: 150px; 
+            height: 60px;
+            border: 2px solid #cccccc;
+        }
+
+        .number-container {
+            display: flex;
+            justify-content: flex-start;
+            font-size: 24px;
+        }
+
+        .number {
+            margin: 0 2px;
+            font-weight: bold;
+        }
+
+        .format-container {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            margin-top: 5px;
+        }
+
+        .format {
+            margin: 0 2px;
+            padding: 3px;
+            border-radius: 5px;
+        }
+
+        .format-container .format.default-text {
+            background-color: white; /* Màu nền mặc định */
+        }
+
+        .format-container .format.blue-text {
+            background-color: #CCCCFF; /* Màu nền cho blue-text */
+        }
+
+        .format-container .format.red-text {
+            background-color: #cd9e99; /* Màu nền cho blue-text */
+        }
+
+        .format-container .format.yellow-text {
+            background-color: #CCFFCC; /* Màu nền cho yellow-text */
+        }
+
+        .number-container .number.default-text {
+            color: black;
+        }
+
+        .number-container .number.blue-text {
+            color: blue;
+        }
+
+        .number-container .number.red-text {
+            color: rgb(213, 42, 42);
+        }
+
+        .number-container .number.yellow-text {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+    <h1>Phân Tích Số Đẹp</h1>
+
+    <div class="sim-container">
+        {% for item in default_results %}
+        <div class="sim">
+            <div class="number-container">
+                {% for i in range(item.split_number | length) %}
+                <span class="number {{ item.styles[i] }}">{{ item.split_number[i] }}</span>
+                {% endfor %}
+            </div>
+            <div class="format-container">
+                {% for i in range(item.split_number | length) %}
+                <span class="format {{ item.styles[i] }}">{{ item.format[i] | safe }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

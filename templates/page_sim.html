@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giao Diện</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Bộ lọc</h2>
+            <!-- Các bộ lọc sẽ được thêm vào đây -->
+            <div class="filter">
+                <label for="filter1">Lọc 1:</label>
+                <input type="text" id="filter1">
+            </div>
+            <div class="filter">
+                <label for="filter2">Lọc 2:</label>
+                <input type="text" id="filter2">
+            </div>
+            <!-- Thêm các bộ lọc khác nếu cần -->
+        </div>
+        <div class="main-content">
+            <form id="searchForm" action="/search" method="post" onsubmit="return checkPhoneNumber(event)">
+                <div class="search-bar">
+                    <input name="phone" type="text" id="phoneNumber" placeholder="Nhập số bạn muốn tìm kiếm..." value="{{number}}">
+                    <button type="submit">Kiểm tra</button>
+                    <a href="/">Home</a>
+                </div>
+                <p id="errorMessage"></p>
+            </form>
+            
+            <div id="errorMessage" class="error"></div>
+
+            <div class="sim-container">
+              {% for item in default_results %}
+              <div class="sim" onclick="showPopup('{{item.phone}}')">
+                  <div class="number-container">
+                      {% for i in range(item.split_number | length) %}
+                      <span class="number {{ item.styles[i] }}">{{ item.split_number[i] }}</span>
+                      {% endfor %}
+                  </div>
+                  <div class="format-container">
+                      {% for i in range(item.split_number | length) %}
+                      <span class="format {{ item.styles[i] }}">{{ item.format[i]|safe}}</span>
+                      {% endfor %}
+                  </div>
+              </div>
+              {% endfor %}
+          </div>
+          <div class="pagination">
+            <a href="{{ url_for(page_url, page=current_page - 1, phone=number) }}" {% if current_page == 1 %}style="display:none;"{% endif %}>« Trước</a>
+            <span>Trang {{ current_page }}</span>
+            <a href="{{ url_for(page_url, page=current_page + 1, phone=number) }}" {% if current_page == total_page %}style="display:none;"{% endif %}>Tiếp theo »</a>
+          </div>        
+        </div>
+    </div>
+    <!-- Overlay (nền tối) -->
+    <div id="popup-overlay" class="popup-overlay" style="display:none;" onclick="closePopup()"></div>
+
+    <!-- Pop-up element -->
+    <div id="popup" class="popup" style="display:none;">
+        <div class="popup-content">
+            <span class="close" onclick="closePopup()">&times;</span>
+            
+            <!-- Nội dung chi tiết sẽ được điền ở đây -->
+            <div id="popup-data" class="popup-data">
+                <!-- Các hàng dữ liệu sẽ được thêm từ API -->
+            </div>
+
+            <!-- Form nhập bình luận -->
+            <div class="comment-form">
+                <input type="text" id="comment-input" placeholder="Nhập bình luận của bạn...">
+                <button type="button" onclick="submitComment()">Thay đổi</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDocumentId = null; // Biến toàn cục để lưu ID tài liệu hiện tại
+
+        function submitComment() {
+        // Lấy dữ liệu từ input
+        const comment = document.getElementById('comment-input').value;
+        // Kiểm tra xem comment có rỗng không
+        if (!comment) {
+            alert("Vui lòng nhập bình luận.");
+            return;
+        }
+
+        // Gửi yêu cầu cập nhật đến server
+        fetch(`http://localhost:8080/update_comment?id=${currentDocumentId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ comment: comment }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Lỗi khi cập nhật bình luận');
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('Bình luận đã được gửi thành công!');
+            // Xử lý thêm nếu cần (ví dụ: làm sạch input)
+            document.getElementById('comment-input').value = '';
+        })
+        .catch(error => {
+            console.error('Có lỗi:', error);
+            alert('Có lỗi xảy ra, vui lòng thử lại.');
+        });
+    }
+
+        
+        // *****************
+        function showPopup(phone) {
+            currentDocumentId = phone;
+            document.getElementById('popup').style.display = 'block';
+            document.getElementById('popup-overlay').style.display = 'block'
+            console.log(phone)
+            fetch(`/detail?id=${phone}`)
+            .then(response => response.json()) // Chắc chắn bạn đang nhận JSON
+            .then(data => {
+                const popupData = document.getElementById('popup-data');
+                popupData.innerHTML = ''; // Xóa nội dung cũ
+                
+                // Hiển thị dữ liệu key-value
+                Object.entries(data).forEach(([key, value]) => {
+                    const row = document.createElement('div');
+                    row.className = 'data-row';
+                    row.innerHTML = `<span><strong>${key}:</strong> ${value}</span>`;
+                    popupData.appendChild(row);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching detail:', error);
+            });
+        }
+
+        // Close the popup when clicking outside of it
+        window.onclick = function(event) {
+            var popup = document.getElementById('popup');
+            if (event.target == popup) {
+                closePopup();
+            }
+        };
+
+        function openPopup() {
+            document.getElementById("popup").style.display = "block";
+            document.getElementById("popup-overlay").style.display = "block"; // Hiển thị overlay
+        }
+
+        function closePopup() {
+            document.getElementById("popup").style.display = "none";
+            document.getElementById("popup-overlay").style.display = "none"; // Ẩn overlay
+        }
+
+
+        // *****************************
+
+        function validatePhoneNumber(input) {
+            const regex = /^\d{0,10}$/;
+            return regex.test(input);
+        }
+
+        function checkPhoneNumber(event) {
+            const input = document.getElementById("phoneNumber").value;
+            const errorMessage = document.getElementById("errorMessage");
+
+            if (validatePhoneNumber(input)) {
+                return true;
+            } else {
+                errorMessage.textContent = "Số điện thoại không hợp lệ! Vui lòng nhập đúng 10 chữ số.";
+                errorMessage.style.color = "red";
+                event.preventDefault();
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze Phone Numbers</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        .highlight {
+            color: red;
+        }
+        .phone-number {
+            white-space: pre;
+        }
+        
+        .default-text {
+            color: black;
+            font-weight: bold;
+        }
+        .format-container .format {
+            margin: 0 2px;
+            padding: 3px;
+            border-radius: 5px;
+        }
+        .format-container .format.default-text {
+            background-color: #FFFFFF; /* Màu nền mặc định */
+        }
+        .format-container .format.blue-text {
+            background-color: #CCCCFF; /* Màu nền cho mid-text */
+        }
+        .format-container .format.yellow-text {
+            background-color: #d4e9d4; /* Màu nền cho tail-text */
+        }
+        .format-container .format.red-text {
+            background-color: #ca9a9a; /* Màu nền cho head-text */
+        }
+        .number-container {
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .number-container .number {
+            margin: 0 2px;
+            font-weight: bold;
+        }
+        .number-container .number.default-text {
+            color: black;
+        }
+        .number-container .number.blue-text {
+            color: rgb(5, 122, 255);
+        }
+        .number-container .number.yellow-text {
+            color: rgb(42, 255, 42);
+        }
+        .number-container .number.red-text {
+            color: rgb(205, 24, 24);
+        }
+        .format-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Phone Number Analysis</h1>
+
+    <form id="phoneForm" action="/analyze" method="POST">
+        <label for="phone_number">Enter Phone Number:</label>
+        <input type="text" id="phone_number" name="phone_number" required>
+        <button type="submit">Analyze</button>
+    </form>
+    
+    <h2>Analysis Results</h2>
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Phone Number</th>
+                <th>Dạng đẹp đầu</th>
+                <th>Dãy đẹp đầu</th>
+                <th>Vị trí đầu</th>
+                <th>Dạng đẹp giữa</th>
+                <th>Dãy đẹp giữa</th>
+                <th>Vị trí giữa</th>
+                <th>Dạng đẹp đuôi</th>
+                <th>Dãy đẹp đuôi</th>
+                <th>Vị trí đuôi</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Hiển thị kết quả mặc định -->
+            {% for data in default_results %}
+            <tr>
+                <td>
+                    <div class="sim_number">
+                        <div class="number-container">
+                            {% for i in range(data.split_number | length) %}
+                            <span class="number {{ data.styles[i] }}">{{ data.split_number[i] }}</span>
+                            <!-- {% if i < data.split_number | length - 1 %}.
+                            {% endif %} -->
+                            {% endfor %}
+                        </div>
+                        <div class="format-container">
+                            {% for i in range(data.split_number | length) %}
+                            <span class="format {{ data.styles[i] }}">{{ data.format[i] | safe }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </td>
+                <td>{{ data.result['Dạng đẹp đầu'] }}</td>
+                <td>{{ data.result['Dãy đẹp đầu'] }}</td>
+                <td>{{ data.result['Vị trí đầu'] }}</td>
+                <td>{{ data.result['Dạng đẹp giữa'] | join(', ') }}</td>
+                <td>{{ data.result['Dãy đẹp giữa'] | join(', ') }}</td>
+                <td>{{ data.result['Vị trí giữa'] | join(', ') }}</td>
+                <td>{{ data.result['Dạng đẹp đuôi'] }}</td>
+                <td>{{ data.result['Dãy đẹp đuôi'] }}</td>
+                <td>{{ data.result['Vị trí đuôi'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>        
+    </table>
+    <div>
+    </div>
+
+    <script>
+        async function submitForm(event) {
+            event.preventDefault(); // Prevent the default form submission
+    
+            const form = document.getElementById('phoneForm');
+            const formData = new FormData(form);
+    
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+    
+                const result = await response.json();
+    
+                if (!result.error) {
+                    const table = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
+                    
+                    // Create a new row for the new result
+                    const newRow = table.insertRow(0);
+                    const phoneNumberCell = newRow.insertCell(0);
+                    const beautifulStartCell = newRow.insertCell(1);
+                    const startSequenceCell = newRow.insertCell(2);
+                    const startPositionCell = newRow.insertCell(3);
+                    const beautifulMiddleCell = newRow.insertCell(4);
+                    const middleSequenceCell = newRow.insertCell(5);
+                    const middlePositionCell = newRow.insertCell(6);
+                    const beautifulEndCell = newRow.insertCell(7);
+                    const endSequenceCell = newRow.insertCell(8);
+                    const endPositionCell = newRow.insertCell(9);
+    
+                    // Insert data into the new row
+                    phoneNumberCell.innerHTML = formatPhoneNumber(result.split_number, result.styles, result.format);
+                    beautifulStartCell.innerHTML = result.result['Dạng đẹp đầu'];
+                    startSequenceCell.innerHTML = result.result['Dãy đẹp đầu'];
+                    startPositionCell.innerHTML = result.result['Vị trí đầu'];
+                    beautifulMiddleCell.innerHTML = result.result['Dạng đẹp giữa'].join(', ');
+                    middleSequenceCell.innerHTML = result.result['Dãy đẹp giữa'].join(', ');
+                    middlePositionCell.innerHTML = result.result['Vị trí giữa'].join(', ');
+                    beautifulEndCell.innerHTML = result.result['Dạng đẹp đuôi'];
+                    endSequenceCell.innerHTML = result.result['Dãy đẹp đuôi'];
+                    endPositionCell.innerHTML = result.result['Vị trí đuôi'];
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function formatPhoneNumber(numberSplit, styles, format) {
+            return `
+                <div class="sim_number">
+                    <div class="number-container">
+                        ${numberSplit.map((num, i) => 
+                            `<span class="number ${styles[i]}"> ${num}</span>`
+                        ).join('')}
+                    </div>
+                    <div class="format-container">
+                        ${format.map((fmt, i) => 
+                            `<span class="format ${styles[i]}"> ${fmt}</span>`
+                        ).join('')}
+                    </div>
+                </div>`;
+        }
+
+    
+        document.getElementById('phoneForm').addEventListener('submit', submitForm);
+    </script>    
+</body>
+</html>
